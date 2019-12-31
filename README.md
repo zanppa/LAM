@@ -1,5 +1,5 @@
 # LAM
-LAM (finnish: Liikenteen Automaattinen Mittaus, english: TMS or Traffic Measurement System) is a system that provides traffic measurement data from about 500 measurement points across Finland. The data is provided free by [Digitraffic](https://www.digitraffic.fi/en/), by the [Finnish Transport Infrastructure Agency V‰yl‰](https://vayla.fi/web/en/open-data).
+LAM (finnish: Liikenteen Automaattinen Mittaus, english: TMS or Traffic Measurement System) is a system that provides traffic measurement data from about 500 measurement points across Finland. The data is provided free by [Digitraffic](https://www.digitraffic.fi/en/), by the [Finnish Transport Infrastructure Agency V√§yl√§](https://vayla.fi/web/en/open-data).
 
 This repository was born to provide a real-time estimate of the traffic situation on my commutation route. I wanted to have a way to estimate which route to work/home would be the fastest and when should I leave. The code is very quick'n'dirty but has served me quite well.
 
@@ -13,13 +13,13 @@ The code used in this repository can be divided in three parts:
  
 The output when the system is used looks like following:
 
-![Example graph](./example_graph.png)
+![Example graph](https://github.com/zanppa/LAM/raw/master/example_graph.png)
 
 A similar graph is shown for all the measurement stations selected. In the graph the X axis is the time of day (hours). The line curves show the traffic speed today and the same weekday for the previous 4 weeks, using the left Y axis. The filled curves show amount of cars per hour for today and previous week using the right Y axis. 
 
 ## Main files
 ### LAM_fetch.py
-LAM_fetch.py is the main program that fetches the data from Digitraffic. When the program is run, it queries latest data from all desired stations and appends the values to a corresponding file in **data/** directory.
+**LAM_fetch.py** is the main program that fetches the data from Digitraffic. When the program is run, it queries latest data from all desired stations and appends the values to a corresponding file in **data/** directory.
 
 There are few parameters that need to be set:
  - `update_interval` is used to tell the program how often it is supposed to be called.
@@ -43,10 +43,10 @@ First 6 columns are fixed and the rest are the variables that were specified ear
 Note that the data rotation is very naive in that it loads the whole file as lines, then drops first ones if necessary, appends new ones an re-writes the files. It may corrupt the files if the script crashes and also it is very slow on large datasets. I'd rather used SQL or other database but never got to implement that...
 
 ### run.sh
-Shell script to run the **LAM_fetch.py** every 5 minutes. It uses `watch` for the periodic execution, so the script is intended to be run in a *screen* shell.
+Shell script to run the **LAM_fetch.py** every 5 minutes. It uses *watch* for the periodic execution, so the script is intended to be run in a *screen* shell.
 
 ### query.php
-query.php is used by the main user interface web-page to access the stored data. It takes several parameters and returns JSON data that is ready to be plotted on a graph. The parameters (in HTTP GET) are:
+**query.php** is used by the main user interface web-page to access the stored data. It takes several parameters and returns JSON data that is ready to be plotted on a graph. The parameters (in HTTP GET) are:
  - `id`: the station ID. These are not necessarily the same as the LAM station IDs and are defined in the query.php itself in *$sensors*.
  - `dir`: direction, either 1 or 2. Tells which measurement direction to use. Default=1.
  - `Y`: year to request data from. Default=current year.
@@ -79,9 +79,9 @@ to draw 3 stations in direction 2 and filtering with gain of 0.8.
 
 To change the URL where the **query.php** resides, you need to modify the ajax command:
 ```
-		$.ajax({
-			type: 'GET',
-			url: './query.php?dir=' + st_dir + '&filter=' + filter + '&id=' + stations[index],
+$.ajax({
+	type: 'GET',
+	url: './query.php?dir=' + st_dir + '&filter=' + filter + '&id=' + stations[index],
 ```
 
 
