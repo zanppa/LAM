@@ -1,0 +1,189 @@
+<html>
+<head>
+<title>Ruuhkatilanne</title>
+<script src="./Chart.js"></script>
+<script src="./jquery-3.2.1.min.js"></script>
+
+
+<script>
+// Hints:
+// https://github.com/chartjs/Chart.js/issues/1178
+
+
+// From https://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
+function parseQuery(qstr) {
+    var query = {};
+    var a = (qstr[0] === '?' ? qstr.substr(1) : qstr).split('&');
+    for (var i = 0; i < a.length; i++) {
+        var b = a[i].split('=');
+	key = decodeURIComponent(b[0]);
+	value = decodeURIComponent(b[1] || '');
+
+	if (key in query) {
+		if (query[key] instanceof Array)
+			query[key].push(value);
+		else
+			query[key] = [query[key], value];
+	}
+	else query[key] = value;
+    }
+    return query;
+}
+
+
+$(document).ready(function() {
+
+	// List all sensor stations that are wanted on screen by default
+	var stations = ["23164", "23159", "23004", "23107", "23151", "23145", "23145"];
+
+	// Color palette, idea from http://www.somersault1824.com/tips-for-designing-scientific-figures-for-color-blind-readers/
+	var palette = ["#000000", "#FF92B6", "#490092", "#02B6FF", "#920000", "#004949", "#006D92", "#924900", "#009292", "#B692FF", "#DBD100"];
+	var graphElement = [];
+
+
+	// Get the query string for things like filter or direction
+	var direction = 1;
+	var filter = 0.3;
+	
+	// Parse location and other query parameters
+	var vars = parseQuery(window.location.search.substring(1));
+	if ("filter" in vars) filter = vars["filter"];
+	if ("st" in vars) {
+		stations = [];
+		if(vars["st"] instanceof Array) {
+			for (var i=0; i < vars["st"].length; i++)
+				stations.push(vars["st"][i]);
+		} else {
+			stations = [vars["st"]];
+		}
+	}
+	if ("dir" in vars) {
+		direction = [];
+		if(vars["dir"] instanceof Array) {
+			for (var i=0; i < vars["dir"].length; i++)
+				direction.push(vars["dir"][i]);
+		} else {
+			direction = vars["dir"];
+		}
+	}
+
+	// Loop through all stations, adding graphs on the go
+	for (var index = 0; index < stations.length; index++) {
+
+		// Need to wrap into another function, otherwise the context of "index" is lost inside the callback functions
+		// which means that charts will be pushed to wrong places if at all...
+		// See e.g. https://stackoverflow.com/questions/2405064/ajax-call-in-for-loop-wont-return-values-to-correct-array-positions
+		(function(index) {
+
+			// Add canvas for graphs
+			var rootNode = document.getElementById("chartContainer");
+
+			var element = document.createElement("canvas");
+			element.setAttribute("id", "line-chart"+index);
+			var finalElement = rootNode.appendChild(element);
+			//var finalElement = document.body.appendChild(element);
+			graphElement.push(finalElement);
+
+			// Get the direction of current station if requested
+			if (direction instanceof Array) {
+				if (direction.length >= index) st_dir = direction[index];
+				else st_dir = 1;
+			} else st_dir = direction;
+		
+			$.ajax({
+				type: 'GET',
+				url: './query.php?dir=' + st_dir + '&filter=' + filter + '&id=' + stations[index],
+				dataType: 'json',
+				success: function(field) {
+					// Fill the canvas with chart
+					var dataLabels = [];
+					var dataPoints = [];
+					var chartTitle = "N/A";
+
+					chartTitle = field["title"];
+
+					// Loop through all the data sets (i.e. all the sensors)
+					for (var i = 0; i < field["datasets"].length; i++) {
+						dataPoints.push({
+							label: field["datasets"][i]["label"],
+							fill: field["datasets"][i]["fill"],
+							borderColor: palette[i], //'#'+(Math.random()*0xFFFFFF<<0).toString(16),
+							borderWidth: 2,
+							pointRadius: 0,
+							yAxisID: field["datasets"][i]["yaxis"],
+							data: []
+						});
+
+						// Add data points in that data set
+						for (var j = 0; j < field["datasets"][i]["data"].length; j++) {
+								dataPoints[i].data.push({x:field["datasets"][i]["data"][j].x, y:field["datasets"][i]["data"][j].y});
+						}
+		
+					}
+
+					new Chart(graphElement[index], {
+						type: 'scatter',
+						data: {
+							datasets: dataPoints
+						},
+						options: {
+							title: {
+								display: true,
+								text: chartTitle
+							},
+							scales: {
+							  xAxes: [{
+									ticks: {
+										min: 0,
+										max: 24,
+										stepSize: 1
+									}
+							  }],
+							  yAxes: [{
+												display: true,
+									id: "y-axis-1",
+												ticks: {
+									min: 0,
+													max: 140
+									},
+									position: 'left'
+											  },
+								  {
+												display: true,
+									id: "y-axis-2",
+												ticks: {
+									min: 0
+	//				                                max: 140
+												},
+									position: 'right'
+										  }]
+							},
+							elements: {
+							  line: { tension: 0 }
+							},
+							animation: {
+									duration: 0.0	// In milliseconds
+								},
+							showLines: true
+						}
+					});
+
+				}
+			});
+		})(index);
+	}
+});
+
+</script>
+
+</head>
+<body>
+
+
+<div id="chartContainer" style="width:800; height:450;">
+</div>
+
+
+</body>
+</html>
+
